@@ -117,7 +117,7 @@ on_die=respawn
 enabled=true
 start_at_boot=false
 #command=${EXE_PREFIX}-proxy -s OIO,${NS},proxy ${IP}:${PORT} ${NS}
-command=${EXE_PREFIX}-proxy -s OIO,${NS},proxy -O Bind=${IP}:${PORT_PROXYD_CS} -O Bind=${IP}:${PORT_PROXYD_DIR} -O Bind=${IP}:${PORT_PROXYD_M2} ${IP}:${PORT_PROXYD} ${NS}
+command=${EXE_PREFIX}-proxy -s OIO,${NS},proxy -O Cache=no -O Bind=${IP}:${PORT_PROXYD_CS} -O Bind=${IP}:${PORT_PROXYD_DIR} -O Bind=${IP}:${PORT_PROXYD_M2} ${IP}:${PORT_PROXYD} ${NS}
 """
 
 template_nginx_gridinit = """
@@ -223,7 +223,8 @@ template_nsinfo_json = """{
 		"service_update_policy" : "meta2=NONE|${M2_REPLICAS}|${M2_DISTANCE};sqlx=KEEP|${SQLX_REPLICAS}|${SQLX_DISTANCE}|",
 		"automatic_open" : "true",
 		"meta2_max_versions" : "${VERSIONING}",
-		"storage_policy" : "${STGPOL}"
+		"storage_policy" : "${STGPOL}",
+		"lb.rawx" : "WRR"
 	},
 	"storage_policy":{
 		"SINGLE" : "NONE:NONE:NONE",

@@ -1189,8 +1189,9 @@ grid_lb_iterator_next_set(struct grid_lb_iterator_s *iter,
 		return FALSE;
 	}
 
-	*result = (struct service_info_s**) metautils_gpa_to_array(
-			metautils_gtree_to_gpa(polled, TRUE), TRUE);
+	GPtrArray *gpa = metautils_gtree_to_gpa(polled, TRUE);
+	oio_ext_array_shuffle (gpa->pdata, gpa->len);
+	*result = (struct service_info_s**) metautils_gpa_to_array(gpa , TRUE);
 	return TRUE;
 }
 
@@ -1244,6 +1245,21 @@ grid_lb_iterator_next_set2(struct grid_lb_iterator_s *iter,
 	opt.filter.hook = (service_filter) _ext_opt_filter;
 	opt.filter.data = opt_ext;
 	return grid_lb_iterator_next_set(iter, result, &opt);
+}
+
+const char *
+grid_lb_iterator_to_string (struct grid_lb_iterator_s *it)
+{
+	if (!it) return "NULL";
+	switch (it->type) {
+		case LBIT_SINGLE: return "SINGLE";
+		case LBIT_SHARED: return grid_lb_iterator_to_string(it->internals.shared.sub);
+		case LBIT_RR: return "RR";
+		case LBIT_WRR: return "WRR";
+		case LBIT_RAND: return "RAND";
+		case LBIT_WRAND: return "WRAND";
+	}
+	return "BUG";
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1343,8 +1359,12 @@ void
 grid_lbpool_reconfigure(struct grid_lbpool_s *glp,
 		struct namespace_info_s *ni)
 {
-	if (!glp || !ni || !ni->options) {
-		GRID_DEBUG("Invalid parameter (%s)", __FUNCTION__);
+	if (!glp || !ni) {
+		GRID_WARN("Invalid parameter (%s)", __FUNCTION__);
+		return ;
+	}
+	if (!ni->options) {
+		GRID_DEBUG("LB reload: no configuration (%s)", __FUNCTION__);
 		return ;
 	}
 
@@ -1355,7 +1375,8 @@ grid_lbpool_reconfigure(struct grid_lbpool_s *glp,
 		if (!g_str_has_prefix((gchar*)k, "lb."))
 			continue;
 		GString *str = g_string_new((gchar*)k + (sizeof("lb.") -1));
-		str = g_string_append_len(g_string_append(str, "="),
+		str = g_string_append(str, "=");
+		str = g_string_append_len(str,
 				((char *)((GByteArray*)v)->data), ((GByteArray*)v)->len);
 		_configure_string(glp, str->str);
 		g_string_free(str, TRUE);

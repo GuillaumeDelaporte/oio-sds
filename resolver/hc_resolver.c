@@ -79,6 +79,7 @@ hc_resolver_element_extract(struct cached_element_s *elt)
 	_strv_pointers(result, elt->s, elt->count_elements);
 	result[elt->count_elements] = NULL;
 
+	oio_ext_array_shuffle ((void**)result, elt->count_elements);
 	return result;
 }
 
@@ -126,6 +127,12 @@ struct hc_resolver_s*
 hc_resolver_create(void)
 {
 	return hc_resolver_create1(time(0));
+}
+
+void
+hc_resolver_configure (struct hc_resolver_s *r, enum hc_resolver_flags_e f)
+{
+	if (r) r->flags = f;
 }
 
 void
@@ -408,8 +415,7 @@ _resolve_reference_service(struct hc_resolver_s *r, struct hashstr_s *hk,
 	EXTRA_ASSERT((err!=NULL) ^ (*result!=NULL));
 	if (!err) {
 		/* fill the cache */
-		if (!(r->flags & HC_RESOLVER_NOCACHE))
-			hc_resolver_store(r, r->services.cache, hk, *result);
+		hc_resolver_store(r, r->services.cache, hk, *result);
 	}
 
 	g_strfreev(m1urlv);
