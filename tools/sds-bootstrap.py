@@ -116,7 +116,7 @@ group=${NS},localhost,proxy
 on_die=respawn
 enabled=true
 start_at_boot=false
-#command=${EXE_PREFIX}-proxy -s OIO,${NS},proxy ${IP}:${PORT} ${NS}
+#command=${EXE_PREFIX}-proxy -s OIO,${NS},proxy -O Bind=${RUNDIR}/${NS}-proxy.sock ${IP}:${PORT} ${NS}
 command=${EXE_PREFIX}-proxy -s OIO,${NS},proxy -O Cache=no -O Bind=${IP}:${PORT_PROXYD_CS} -O Bind=${IP}:${PORT_PROXYD_DIR} -O Bind=${IP}:${PORT_PROXYD_M2} ${IP}:${PORT_PROXYD} ${NS}
 """
 
@@ -223,8 +223,15 @@ template_nsinfo_json = """{
 		"service_update_policy" : "meta2=NONE|${M2_REPLICAS}|${M2_DISTANCE};sqlx=KEEP|${SQLX_REPLICAS}|${SQLX_DISTANCE}|",
 		"automatic_open" : "true",
 		"meta2_max_versions" : "${VERSIONING}",
+		"meta2_keep_deleted_delay" : 86400,
+		"container_max_size" : 50000000,
+		"compression" : null,
+		"FLATNS_hash_offset" : 0,
+		"FLATNS_hash_size" : 0,
+		"FLATNS_hash_bitlength" : 17,
 		"storage_policy" : "${STGPOL}",
-		"lb.rawx" : "WRR"
+		"lb.meta2" : "WRAND?standard_deviation=no",
+		"lb.rawx" : "WRAND?shorten_ratio=0.8"
 	},
 	"storage_policy":{
 		"SINGLE" : "NONE:NONE:NONE",
@@ -279,7 +286,7 @@ group=${NS},localhost,conscience
 on_die=respawn
 enabled=true
 start_at_boot=true
-command=${EXE_PREFIX}-cluster-server -s OIO,${NS},consc -O Endpoint=${IP}:${PORT_CS} ${CFGDIR}/${NS}-conscience
+command=${EXE_PREFIX}-cluster-server -q -s OIO,${NS},consc -O Endpoint=${IP}:${PORT_CS} ${CFGDIR}/${NS}-conscience
 """
 
 template_gridinit_service = """
